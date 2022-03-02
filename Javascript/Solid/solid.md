@@ -6,8 +6,8 @@ It is set of 5 principles:
 - Single Responsibility Principle
 - Open Closed Principle
 - Liskov Substitution Principle
-- s
-- s
+- Interface Segregation Principle
+- Dependency Inversion Principle
 
 ## Single Responsibility Principle
 
@@ -285,3 +285,199 @@ useIt(sq);
 The `useIt` function receives a base class, so according to this principle, it should also work with derived classes, like the square. Unfortunately this way of "fixing" the code is not proper, since it goes against this principle.
 
 We should be using factory design here. *(We will see it further along the course)*
+
+## Interface Segregation Principle
+
+You need to segregate/split the interface into several small interfaces, so people won't have to implement things they don't need.
+
+Ex. We implement the machine class, where each client can create their own machine. However, because we put 3 methods within the machine class, the clients will have to implement (or throw an error) even if they didn't wanted/needed.
+```javascript
+class Machine
+{
+    constructor()
+    {
+        if (this.constructor.name === 'Machine')
+        throw new Error('Machine is abstract!');
+    }
+
+    print(doc) {}
+    fax(doc) {}
+    scan(doc) {}
+}
+
+class MultiFunctionPrinter extends Machine
+{
+    print(doc) {
+        //
+    }
+
+    fax(doc) {
+        //
+    }
+
+    scan(doc) {
+        //
+    }
+}
+
+class NotImplementedError extends Error
+{
+    constructor(name)
+    {
+        let msg = `${name} is not implemented!`;
+        super(msg);
+        // maintain proper stack trace
+        if (Error.captureStackTrace)
+        Error.captureStackTrace(this, NotImplementedError);
+        // your custom stuff here :)
+    }
+}
+
+class OldFashionedPrinter extends Machine   // => only prints
+{
+    print(doc) {
+        // it will work
+    }
+
+    // omitting fax is the same as no-op impl
+
+    scan(doc) {
+        // throw new Error('not implemented!');
+        throw new NotImplementedError(
+        'OldFashionedPrinter.scan')
+    }
+}
+
+// solution
+class Printer
+{
+    constructor()
+    {
+        if (this.constructor.name === 'Printer')
+        throw new Error('Printer is abstract!');
+    }
+
+    print(){}
+}
+
+class Scanner
+{
+    constructor()
+    {
+        if (this.constructor.name === 'Scanner')
+        throw new Error('Scanner is abstract!');
+    }
+
+    scan(){}
+}
+
+// we don't allow this!
+// let m = new Machine();
+
+let printer = new OldFashionedPrinter();
+printer.fax(); // nothing happens
+//printer.scan();
+```
+
+**Principle of Least Surprise**, when people use your api they should not be surprised, they should not be seeing some magical behavior. They should be getting predictable results.
+
+**YAGNI** - You Ain't Going to Need It
+
+## Dependency Inversion Principle
+
+Defines a relationship that you should have between a low level models and high level models. High level modules should not depend on low level modules. It should be a abstract class/interface in between.
+
+```javascript
+let Relationship = Object.freeze({
+    parent: 0,
+    child: 1,
+    sibling: 2
+});
+
+class Person
+{
+    constructor(name)
+    {
+        this.name = name;
+    }
+}
+
+// LOW-LEVEL (STORAGE)
+class RelationshipBrowser
+{
+    constructor()
+    {
+        if (this.constructor.name === 'RelationshipBrowser')
+        throw new Error('RelationshipBrowser is abstract!');
+    }
+
+    findAllChildrenOf(name) {}
+}
+
+class Relationships extends RelationshipBrowser
+{
+    constructor()
+    {
+        super();
+        this.data = [];
+    }
+
+    addParentAndChild(parent, child)
+    {
+        this.data.push({
+        from: parent,
+        type: Relationship.parent,
+        to: child
+        });
+        this.data.push({
+        from: child,
+        type: Relationship.child,
+        to: parent
+        });
+    }
+
+
+    findAllChildrenOf(name) {
+        return this.data.filter(r =>
+        r.from.name === name &&
+        r.type === Relationship.parent
+        ).map(r => r.to);
+    }
+}
+
+// HIGH-LEVEL (RESEARCH)
+class Research
+{
+    // constructor(relationships)
+    // {
+    //   // problem: direct dependence ↓↓↓↓ on storage mechanic
+    //   let relations = relationships.data;
+    //   for (let rel of relations.filter(r =>
+    //     r.from.name === 'John' &&
+    //     r.type === Relationship.parent
+    //   ))
+    //   {
+    //     console.log(`John has a child named ${rel.to.name}`);
+    //   }
+    // }
+
+    constructor(browser)
+    {
+        for (let p of browser.findAllChildrenOf('John'))
+        {
+        console.log(`John has a child named ${p.name}`);
+        }
+    }
+}
+
+let parent = new Person('John');
+let child1 = new Person('Chris');
+let child2 = new Person('Matt');
+
+// low-level module
+let rels = new Relationships();
+rels.addParentAndChild(parent, child1);
+rels.addParentAndChild(parent, child2);
+
+new Research(rels);
+```

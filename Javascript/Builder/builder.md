@@ -175,3 +175,53 @@ let pb = new PersonBuilder();
 let person = pb.lives.at('123 London Road').in('London').withPostcode('SW12BC').works.at('Fabrikam').asA('Engineer').earning(123000).build();
 console.log(person.toString());
 ```
+
+#### [Refactoring Guru](https://refactoring.guru/design-patterns/builder)
+
+Creational design pattern that lets you construct complex objects step by step.
+
+Problem: Creation of a house. Some houses have garage, some have swimming pool, some have garden etc.
+
+Bad Solution: a class that receives a lot of parameters in the constructor, where you would send something like this:
+```javascript
+// constructor
+House(windows, doors, room, hasGarage, hasSwimPool, hasGarden...)
+
+const house = new House(4, 2, 4, true, null, true...)
+```
+
+Better Solution using Builder: we will have a house builder that will call several separate objects to create the house parts. Ex.
+```javascript
+class HouseBuilder{
+    ...
+    buildWalls()
+    buildDoors()
+    buildWindows()
+    buildRoof()
+    buildGarage()
+    getResult() {return House}
+}
+```
+
+The **Director** - we can extract several calls into a separate class called Director. This class defines the order in which to execute the building steps, while the builder provides the implementation for those steps. The director class might be a good place to put various construction routines so you can reuse them across your program. In addition, the director class completely hides the details of product construction from the client code.
+
+![builder](../../images/builder.png)
+
+Pros: 
+- Construct objects step-by-step, defer construction steps or run steps recursively
+- Reuse the same construction code when building various representations of products
+- Single Responsibility Principle, where you isolate complex construction code from the business logic of the product
+
+Cons: 
+- overall complexity of the code increases since the pattern requires creation of multiple new classes
+
+#### Relations with Other Patterns
+- Many designs start by using **Factory Method** (less complicated and more customizable via subclasses) and evolve toward **Abstract Factory**, **Prototype**, or **Builder** (more flexible, but more complicated).
+
+- **Builder** focuses on constructing complex objects step by step. **Abstract Factory** specializes in creating families of related objects. **Abstract Factory** returns the product immediately, whereas Builder lets you run some additional construction steps before fetching the product.
+
+- You can use **Builder** when creating complex Composite trees because you can program its construction steps to work recursively.
+
+- You can combine **Builder** with **Bridge**: the director class plays the role of the abstraction, while different builders act as implementations.
+
+- **Abstract Factories**, **Builders** and **Prototypes** can all be implemented as **Singletons**.
